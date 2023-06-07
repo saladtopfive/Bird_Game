@@ -1,11 +1,17 @@
+// ---SFML--- //
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/Audio.hpp>
-#include <iostream>
+
+// ---BASIC LIBS--- //
 #include <vector>
 #include <ctime>
 
+// ---DEBUG--- //
+#include <iostream>
+
+// ---CLASS--- //
 class AnimatedSprite : public sf::Sprite {
 private:
     sf::Vector2f acceleration;
@@ -16,6 +22,8 @@ private:
     float elapsedTime;
     sf::RenderWindow& window;
 public:
+
+    // ---CONSTRUCTOR--- ///
     sf::Vector2f velocity = { 2,0 };
     AnimatedSprite(sf::Texture& texture, const std::vector<sf::IntRect>& frames, float frameDuration, sf::RenderWindow& window)
         : spriteFrames(frames), currentFrame(0), frameDuration(frameDuration), elapsedTime(0.0f), window(window) {
@@ -23,6 +31,7 @@ public:
         setFrame(0);
     }
 
+    // ---METHODS--- //
     void setFrame(int frameIndex) {
         currentFrame = frameIndex % spriteFrames.size();
         setTextureRect(spriteFrames[currentFrame]);
@@ -60,8 +69,6 @@ public:
         
     }
 
-
-
     void fall(float accelerationX, float accelerationY) {
         velocity.x += accelerationX;
         velocity.y += accelerationY;
@@ -80,10 +87,10 @@ public:
 
     void switchDirection() {
         if (velocity.x > 0) {
-            setScale(1.0f, 1.0f); // odwrócenie w prawo
+            setScale(1.0f, 1.0f); 
         }
         else {
-            setScale(-1.0f, 1.0f); // odwrócenie w lewo
+            setScale(-1.0f, 1.0f); 
         }
     }
 
@@ -98,35 +105,35 @@ public:
 };
 
 int main() {
-    std::srand(std::time(NULL)); // Inicjalizacja generatora pseudolosowego
+    std::srand(std::time(NULL)); // ---RANDOM--- //
     
-    sf::RenderWindow window(sf::VideoMode(900, 600), "Catch the Fish");
+    // ---TEXTURES--- //
+    sf::RenderWindow window(sf::VideoMode(900, 600), "Catch the Fish"); // ---WINDOW--- //
     window.setFramerateLimit(60);
-    sf::Texture birdTexture;
+
+    sf::Texture birdTexture; // ---BIRD--- //
     if (!birdTexture.loadFromFile("bird_1.png")) {
         return 1;
     }
 
-    sf::Texture fishTexture;
+    sf::Texture fishTexture; // ---FISH--- //
     if (!fishTexture.loadFromFile("fish.png")) {
         return 1;
     }
 
-    std::vector<sf::IntRect> birdFrames;
+    std::vector<sf::IntRect> birdFrames; // ---BIRD ANIMATION--- //
     birdFrames.emplace_back(0, 0, 48, 48);
     birdFrames.emplace_back(48, 0, 48, 48);
     birdFrames.emplace_back(96, 0, 48, 48);
     birdFrames.emplace_back(144, 0, 48, 48);
     AnimatedSprite bird(birdTexture, birdFrames, 1.0f / birdFrames.size(), window);
     bird.setOrigin(bird.getLocalBounds().width / 2, bird.getLocalBounds().height / 2);
-    
-    
 
-    std::vector<sf::IntRect> fishFrames;
+    std::vector<sf::IntRect> fishFrames; // ---FISH ANIMATION--- //
     fishFrames.emplace_back(0, 0, 48, 19);
     AnimatedSprite fish(fishTexture, fishFrames, 1.0f / fishFrames.size(), window);
 
-
+    // ---BACKGROUND TEXTURES--- //
     sf::Sprite background;
     sf::Texture backgroundTexture;
     if (!backgroundTexture.loadFromFile("gradient.png")) {
@@ -149,11 +156,7 @@ int main() {
     }
     background2.setTexture(groundTexture2);
     background2.setPosition(0, window.getSize().y/2);
-    //background2.setScale(0.2, 0.2);
-    sf::Font font;
-    if (!font.loadFromFile("Arial.ttf")) {
-        return 1;
-    }
+    
     sf::Sprite tree1;
     sf::Texture treeTex1;
     if (!treeTex1.loadFromFile("tree_4.png")) {
@@ -170,11 +173,25 @@ int main() {
     tree2.setTexture(treeTex2);
     tree2.setPosition(window.getSize().x/1.5, window.getSize().y / 2);
 
+    sf::Sprite loseScreen;
+    sf::Texture loseScreenTex;
+    if (!loseScreenTex.loadFromFile("losecondition.jpg")){
+        return 1;
+    }
+    loseScreen.setTexture(loseScreenTex);
+    loseScreen.setPosition(0, 0);
+
+    // ---TEXT AND FONTS--- //
+    sf::Font font;
+    if (!font.loadFromFile("FONT.TTF")) {
+        return 1;
+    }
     sf::Text scoreText;
     scoreText.setFont(font);
     scoreText.setCharacterSize(30);
     scoreText.setFillColor(sf::Color::Black);
-    scoreText.setPosition(window.getSize().x - 200, 20);
+    scoreText.setOrigin(scoreText.getGlobalBounds().left + scoreText.getGlobalBounds().width / 2, scoreText.getGlobalBounds().top + scoreText.getGlobalBounds().height / 2);
+    scoreText.setPosition(10, 20);
 
     sf::Text winText;
     winText.setFont(font);
@@ -182,30 +199,51 @@ int main() {
     winText.setFillColor(sf::Color::Green);
     winText.setPosition(window.getSize().x / 2, window.getSize().y / 2);
 
-    int score = 0;
-    float birdSpeed = 10.0f;
-    float fishSpeed = birdSpeed / 2.0f;
+    sf::Text timeText;
+    timeText.setFont(font);
+    timeText.setCharacterSize(30);
+    timeText.setFillColor(sf::Color::Black);
+    timeText.setPosition(window.getSize().x/2 + 100  , 20);
+    // ---TEXTURES END--- //
 
+    // ---SOME VARIABLES--- //
+    int score = 0;
+    float birdSpeed = 5.0f;
+    float fishSpeed = birdSpeed / 2.0f;
     float elapsedTime = 0.0f;
+    float scoreTime = 10.0f;
+    bool winCondition = false;
+    bool loseCondition = false;
+    bool pause = false;
     sf::Clock clock;
 
-    // Ustawienie pocz¹tkowych pozycji ptaka i ryby
-    bird.setPosition(30,30);
+    // ---FISH & BIRD POSITIONS--- //
+    bird.setPosition(window.getSize().x/2,80);
     fish.setPosition(std::rand() % 601 + 150.0f, window.getSize().y - 125.0f - std::rand() % 21);
-    bool pause = 0;
+
+    // ---MAIN LOOP--- //
     while (window.isOpen()) {
+        int random1 = rand() % 256;
+        int random2 = rand() % 256;
+        int random3 = rand() % 256;
         std::cout << pause << std::endl;
         sf::Event event;
+
+    // ---EVENTS--- //
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 window.close();
             }
         }
-
         float deltaTime = clock.restart().asSeconds();
         elapsedTime += deltaTime;
 
-        // Sterowanie ruchem ptaka
+        // ---ESCAPE--- ///
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+            window.close();
+        }
+
+        // ---BIRD MOVEMENT--- //
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
             bird.velocity.x = birdSpeed;
             bird.switchDirection();
@@ -218,7 +256,7 @@ int main() {
             bird.velocity.x = 0.0f;
         }
 
-        // Lot nurkowy ptaka
+        // ---BIRD DIVE--- ///
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
             pause = 1;
                       
@@ -231,18 +269,22 @@ int main() {
             bird.velocity.y = 0.0f;
         }
 
-        // Poruszanie ptakiem
+        // ---BIRD ANIMATION--- //
         bird.moveAnimation(deltaTime);
 
-        // Poruszanie ryb¹
+        // ---FISH ANIMATION--- 
         fish.move(-fishSpeed * deltaTime, 0.0f);
 
-        // Sprawdzenie kolizji ptaka z ryb¹
+        // ---BIRD FISH COLLISION--- //
         if (bird.getGlobalBounds().intersects(fish.getGlobalBounds())) {
             pause = !pause;
             fish.setPosition(std::rand() % 601 + 150.0f, window.getSize().y - 125.0f);
             bird.setPosition(30, 30);
             score++;
+            if (score == 1)
+            {
+                winCondition = 1;
+            }
         }
         if (bird.getGlobalBounds().top + bird.getGlobalBounds().height > 600)
         {
@@ -250,17 +292,20 @@ int main() {
             pause = !pause;
         }
 
-        // Powrót ptaka na pozycjê pocz¹tkow¹ po 6 sekundach
-        if (elapsedTime >= 6.0f) {
+        // ---TIME--- //
+        timeText.setString("TIME: " + std::to_string(elapsedTime));
+        if (elapsedTime >= scoreTime) {
             bird.resetPosition();
             elapsedTime = 0.0f;
             score--;
+            if (score < 0)
+            {
+                loseCondition = 1;
+            }
         }
-
-        // Wyœwietlanie wyniku
-        scoreText.setString("Score: " + std::to_string(score));
-
-        // Wyœwietlanie elementów
+       
+        // ---SCORE--- //
+        scoreText.setString("SCORE: " + std::to_string(score));       
         if (pause == 1)
         {
             bird.move(0, bird.velocity.y);
@@ -269,25 +314,44 @@ int main() {
                 pause = !pause;
             }
         }
-
-        if (score == 1)
+        if (winCondition)
         {
-            window.clear(sf::Color::Black);
+            scoreTime = 1000000.0f;
+            window.clear(sf::Color(random1,random2,random3));
             winText.setString("WYGRANA !!!");
+            winText.setOrigin(winText.getLocalBounds().width / 2, winText.getLocalBounds().height / 2);
+            winText.setPosition(window.getSize().x / 2, window.getSize().y / 2);
+            winText.setScale(2, 2);            
+            winText.setFillColor(sf::Color(random3, random1, random2));                            
+            window.draw(winText);    
+            window.display();
         }
-        window.clear();
-        window.draw(background);
-        window.draw(background2);
-        window.draw(ground);
-        window.draw(bird);
-        window.draw(fish);
-        window.draw(scoreText);
-        window.draw(tree1);
-        window.draw(tree2);
-        window.display();
+        if (loseCondition)
+        {
+            scoreTime = 1000000.0f;
+            window.clear(sf::Color::Black);
+            loseScreen.setPosition(70,0);
+            loseScreen.setScale(2, 2);
+            window.draw(loseScreen);
+            window.display();
+        }
+
+        // ---DRAW--- //
+        else
+        {
+            window.clear();
+            window.draw(background);
+            window.draw(background2);
+            window.draw(ground);
+            window.draw(bird);
+            window.draw(fish);
+            window.draw(scoreText);
+            window.draw(timeText);
+            window.draw(tree1);
+            window.draw(tree2);
+            window.display();
+        }
     }
 
     return 0;
 }
-
-//cosik
