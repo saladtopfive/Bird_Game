@@ -87,10 +87,10 @@ public:
 
     void switchDirection() {
         if (velocity.x > 0) {
-            setScale(1.0f, 1.0f); 
+            setScale(2.0f, 2.0f); 
         }
         else {
-            setScale(-1.0f, 1.0f); 
+            setScale(-2.0f, 2.0f); 
         }
     }
 
@@ -99,7 +99,7 @@ public:
         setPosition(startPosition);
         velocity = sf::Vector2f(0.0f, 0.0f);
         acceleration = sf::Vector2f(0.0f, 0.0f);
-        setScale(1.0f, 1.0f);
+        setScale(2.0f, 2.0f);
     }
 
 };
@@ -128,10 +128,15 @@ int main() {
     birdFrames.emplace_back(144, 0, 48, 48);
     AnimatedSprite bird(birdTexture, birdFrames, 1.0f / birdFrames.size(), window);
     bird.setOrigin(bird.getLocalBounds().width / 2, bird.getLocalBounds().height / 2);
+    bird.setScale(2, 2);
 
     std::vector<sf::IntRect> fishFrames; // ---FISH ANIMATION--- //
     fishFrames.emplace_back(0, 0, 48, 19);
+
+    
     AnimatedSprite fish(fishTexture, fishFrames, 1.0f / fishFrames.size(), window);
+    fish.setScale(2, 2);
+    fish.setOrigin(fish.getGlobalBounds().left + fish.getGlobalBounds().width / 2, fish.getGlobalBounds().top + fish.getGlobalBounds().height / 2);
 
     // ---BACKGROUND TEXTURES--- //
     sf::Sprite background;
@@ -181,6 +186,15 @@ int main() {
     loseScreen.setTexture(loseScreenTex);
     loseScreen.setPosition(0, 0);
 
+    sf::Sprite sun;
+    sf::Texture sunTex;
+    if (!sunTex.loadFromFile("sun.png")) {
+        return 1;
+    }
+    sun.setTexture(sunTex);
+    sun.setPosition(window.getSize().x / 2, 20);
+    sun.setScale(0.25, 0.25);
+
     // ---TEXT AND FONTS--- //
     sf::Font font;
     if (!font.loadFromFile("FONT.TTF")) {
@@ -198,6 +212,7 @@ int main() {
     winText.setCharacterSize(60);
     winText.setFillColor(sf::Color::Green);
     winText.setPosition(window.getSize().x / 2, window.getSize().y / 2);
+    winText.setScale(1.5, 1.5);
 
     sf::Text timeText;
     timeText.setFont(font);
@@ -226,6 +241,7 @@ int main() {
         int random1 = rand() % 256;
         int random2 = rand() % 256;
         int random3 = rand() % 256;
+        // ---DEBUG--- //
         std::cout << pause << std::endl;
         sf::Event event;
 
@@ -244,11 +260,11 @@ int main() {
         }
 
         // ---BIRD MOVEMENT--- //
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)|| sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
             bird.velocity.x = birdSpeed;
             bird.switchDirection();
         }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)||sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
             bird.velocity.x = -birdSpeed;
             bird.switchDirection();
         }
@@ -277,11 +293,11 @@ int main() {
 
         // ---BIRD FISH COLLISION--- //
         if (bird.getGlobalBounds().intersects(fish.getGlobalBounds())) {
-            pause = !pause;
+            //pause = !pause;
             fish.setPosition(std::rand() % 601 + 150.0f, window.getSize().y - 125.0f);
-            bird.setPosition(30, 30);
+            bird.setPosition(std::rand() % 601 + 150.0f, 80);
             score++;
-            if (score == 1)
+            if (score == 10)
             {
                 winCondition = 1;
             }
@@ -295,6 +311,7 @@ int main() {
         // ---TIME--- //
         timeText.setString("TIME: " + std::to_string(elapsedTime));
         if (elapsedTime >= scoreTime) {
+            pause = 0;
             bird.resetPosition();
             elapsedTime = 0.0f;
             score--;
@@ -318,10 +335,10 @@ int main() {
         {
             scoreTime = 1000000.0f;
             window.clear(sf::Color(random1,random2,random3));
+            //window.clear(sf::Color::Black);
             winText.setString("WYGRANA !!!");
             winText.setOrigin(winText.getLocalBounds().width / 2, winText.getLocalBounds().height / 2);
-            winText.setPosition(window.getSize().x / 2, window.getSize().y / 2);
-            winText.setScale(2, 2);            
+            winText.setPosition(window.getSize().x / 2, window.getSize().y / 2);                      
             winText.setFillColor(sf::Color(random3, random1, random2));                            
             window.draw(winText);    
             window.display();
@@ -339,16 +356,19 @@ int main() {
         // ---DRAW--- //
         else
         {
-            window.clear();
+            window.clear(sf::Color::Black);
             window.draw(background);
             window.draw(background2);
             window.draw(ground);
-            window.draw(bird);
-            window.draw(fish);
+            window.draw(sun);
             window.draw(scoreText);
             window.draw(timeText);
             window.draw(tree1);
             window.draw(tree2);
+            window.draw(bird);
+            for (int i = 0; i < 3; i++) {
+                window.draw(fish);
+            }
             window.display();
         }
     }
